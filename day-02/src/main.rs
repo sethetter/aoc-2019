@@ -1,62 +1,62 @@
 use std::fs;
+use itertools::iproduct;
+
+struct State {
+    pos: usize,
+    codes: Vec<usize>,
+}
+
+impl Iterator for State {
+    type Item = Vec<usize>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let (x, y) = (self.codes[self.pos+1], self.codes[self.pos+2]);
+        let update_at = self.codes[self.pos+3];
+
+        match self.codes[self.pos] {
+            99 => return None,
+            1 => self.codes[update_at] = self.codes[x] + self.codes[y],
+            2 => self.codes[update_at] = self.codes[x] * self.codes[y],
+            _ => unreachable!(),
+        }
+
+        self.pos += 4;
+        Some(self.codes.clone())
+    }
+}
+
+impl State {
+    fn set_init_params(&mut self, x: usize, y: usize) {
+        self.codes[1] = x;
+        self.codes[2] = y;
+    }
+}
 
 fn main() {
     let raw_contents = fs::read_to_string("input.txt").expect("Error reading the file.");
     let contents = raw_contents.trim(); // get rid of trailing \n
 
-    let mut intcodes: Vec<usize> = contents.split(",").map(|x| x.parse().unwrap()).collect();
+    let intcodes: Vec<usize> = contents.split(",").map(|x| x.parse().unwrap()).collect();
 
-    intcodes[1] = 12;
-    intcodes[2] = 2;
+    // Part 1
+    let mut s1: State = State{pos: 0, codes: intcodes.clone()};
+    s1.set_init_params(12, 2);
 
-    println!("Part 1: {}\n", process(intcodes.clone()));
+    let final_state: Vec<usize> = s1.last().unwrap();
+    println!("Part 1: {}", final_state[0]);
 
+    // Part 2
     let target = 19690720;
-    let mut result = 0;
-    let mut noun = 0;
-    let mut verb = 0;
 
-    for n in 0..99 {
-        for v in 0..99 {
-            intcodes[1] = n;
-            intcodes[2] = v;
+    for (x, y) in iproduct!(0..100, 0..100) {
+        let mut state: State = State{ pos: 0, codes: intcodes.clone() };
 
-            result = process(intcodes.clone());
+        state.set_init_params(x, y);
+        let final_state: Vec<usize> = state.last().unwrap();
 
-            if result == target {
-                noun = n;
-                verb = v;
-                break;
-            }
+        if final_state[0] == target {
+            println!("Part 2: {}", (x * 100) + y);
+            break;
         }
-        if result == target { break; }
     }
-
-    println!("Part 2: {}", (noun * 100) + verb);
-}
-
-fn process(mut intcodes: Vec<usize>) -> usize {
-    let mut pos = 0;
-
-    while intcodes[pos] != 99 {
-        let op = intcodes[pos];
-        let x = intcodes[pos+1];
-        let y = intcodes[pos+2];
-        let store_at = intcodes[pos+3];
-
-        match op {
-            1 => intcodes[store_at] = intcodes[x] + intcodes[y],
-            2 => intcodes[store_at] = intcodes[x] * intcodes[y],
-            _ => println!("Invalid op code {} at pos {}", op, pos),
-        }
-
-        pos += 4;
-    }
-
-    intcodes[0]
-}
-
-#[test]
-fn test_process() {
-    assert_eq!(process(vec![1,0,0,0,99]), 2);
 }
