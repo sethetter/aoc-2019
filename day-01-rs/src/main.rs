@@ -4,14 +4,7 @@ fn main() {
     let raw_contents = fs::read_to_string("input.txt").expect("Error reading the file.");
     let contents = raw_contents.trim();
 
-    let masses = contents.split("\n").map(|l| {
-        match l.parse::<i32>() {
-            Ok(x) => x,
-            Err(_) => {
-                println!("Failed on: {}", l); 0
-            },
-        }
-    });
+    let masses = contents.split("\n").map(|l| l.parse::<i32>().unwrap());
 
     let mass_to_fuel = |m: i32| -> i32 {
         let x: f64 = (m / 3).into();

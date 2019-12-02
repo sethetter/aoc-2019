@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings,DeriveGeneric #-}
 module Lib where
 
 fuelNeeded :: [String] -> Int
