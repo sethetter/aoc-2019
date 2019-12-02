@@ -10,6 +10,29 @@ fn main() {
     intcodes[2] = 2;
 
     println!("Part 1: {}\n", process(intcodes.clone()));
+
+    let target = 19690720;
+    let mut result = 0;
+    let mut noun = 0;
+    let mut verb = 0;
+
+    for n in 0..99 {
+        for v in 0..99 {
+            intcodes[1] = n;
+            intcodes[2] = v;
+
+            result = process(intcodes.clone());
+
+            if result == target {
+                noun = n;
+                verb = v;
+                break;
+            }
+        }
+        if result == target { break; }
+    }
+
+    println!("Part 2: {}", (noun * 100) + verb);
 }
 
 fn process(mut intcodes: Vec<usize>) -> usize {
