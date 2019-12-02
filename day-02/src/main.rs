@@ -48,15 +48,14 @@ fn main() {
     // Part 2
     let target = 19690720;
 
-    for (x, y) in iproduct!(0..100, 0..100) {
+    let (x, y) = iproduct!(0..100, 0..100).find(|(x, y)| {
         let mut state: State = State{ pos: 0, codes: intcodes.clone() };
 
-        state.set_init_params(x, y);
+        state.set_init_params(*x, *y);
         let final_state: Vec<usize> = state.last().unwrap();
 
-        if final_state[0] == target {
-            println!("Part 2: {}", (x * 100) + y);
-            break;
-        }
-    }
+        final_state[0] == target
+    }).unwrap();
+
+    println!("Part 2: {}", (x * 100) + y);
 }
