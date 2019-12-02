@@ -1,0 +1,11 @@
+module Spec where
+
+import Test.Hspec
+import Lib
+
+run :: IO ()
+run = hspec $ do
+  describe "fuelFromMass" $ do
+    it "calculates fuel from mass" $ do
+      fuelFromMass 1969 `shouldBe` 654
+      fuelFromMass 100756 `shouldBe` 33583
