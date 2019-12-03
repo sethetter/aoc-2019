@@ -1,4 +1,5 @@
 use std::fs;
+use std::collections::HashSet;
 
 fn main() {
     let raw_contents = fs::read_to_string("input.txt").expect("Error reading the file.");
@@ -96,7 +97,11 @@ fn test_parse_step() {
 }
 
 fn find_intersections(p1: Path, p2: Path) -> Path {
-    p1.into_iter().filter(|p| p2.contains(p)).collect()
+    let h1: HashSet<Point> = p1.into_iter().collect();
+    let h2: HashSet<Point> = p2.into_iter().collect();
+    let mut ret: Path = h1.intersection(&h2).into_iter().cloned().collect();
+    ret.sort();
+    ret
 }
 
 #[test]
