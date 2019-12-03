@@ -4,18 +4,24 @@ fn main() {
     let raw_contents = fs::read_to_string("input.txt").expect("Error reading the file.");
     let contents: Vec<&str> = raw_contents.trim().split("\n").collect(); // get rid of trailing \n
 
-    let w1: Vec<(isize, isize)> = parse_path(contents[0]);
-    let w2: Vec<(isize, isize)> = parse_path(contents[1]);
+    let w1: Path = parse_path(contents[0]);
+    let w2: Path = parse_path(contents[1]);
     println!("Paths parsed.");
 
-    let intersections = find_intersections(w1, w2);
+    let intersections = find_intersections(w1.clone(), w2.clone());
     println!("Found intersections.");
 
-    let (x, y) = closest_intersection(intersections);
+    let (x, y) = closest_intersection(intersections.clone());
     println!("Part 1: ({},{}) {}", x, y, x.abs() + y.abs());
+
+    let cheapest = cheapest_intersection_cost(intersections.clone(), w1.clone(), w2.clone());
+    println!("Part 2: {}", cheapest);
 }
 
-fn parse_path(path_str: &str) -> Vec<(isize, isize)> {
+type Point = (isize, isize);
+type Path = Vec<Point>;
+
+fn parse_path(path_str: &str) -> Path {
     path_str.split(",").fold(vec![(0, 0)], add_steps_to_path)
 }
 
@@ -27,12 +33,12 @@ fn test_parse_path() {
     )
 }
 
-fn add_steps_to_path(path: Vec<(isize, isize)>, step: &str) -> Vec<(isize, isize)> {
+fn add_steps_to_path(path: Path, step: &str) -> Path {
     let (dir, n) = parse_step(step);
     let &(last_x, last_y) = path.last().unwrap();
 
     // determine if we are going backwards or forwards
-    let new_steps: Vec<(isize, isize)> = match dir {
+    let new_steps: Path = match dir {
         Direction::Up => (last_y + 1..=last_y + n).map(|y| (last_x, y)).collect(),
         Direction::Down => (last_y - n..=last_y - 1).map(|y| (last_x, y)).rev().collect(),
         Direction::Left => (last_x - n..=last_x - 1).map(|x| (x, last_y)).rev().collect(),
@@ -89,7 +95,7 @@ fn test_parse_step() {
     assert_eq!(parse_step("D99"), (Direction::Down, 99));
 }
 
-fn find_intersections(p1: Vec<(isize, isize)>, p2: Vec<(isize, isize)>) -> Vec<(isize, isize)> {
+fn find_intersections(p1: Path, p2: Path) -> Path {
     p1.into_iter().filter(|p| p2.contains(p)).collect()
 }
 
@@ -100,7 +106,7 @@ fn test_find_intersections() {
     assert_eq!(find_intersections(p1, p2), vec![(0,0), (1,1)]);
 }
 
-fn closest_intersection(ints: Vec<(isize, isize)>) -> (isize, isize) {
+fn closest_intersection(ints: Path) -> Point {
     // skip the (0, 0) first intersection
     ints.into_iter().skip(1).fold((0, 0), |(prev_x, prev_y), (x, y)| {
         if prev_x == 0 && prev_y == 0 { return (x, y); }
@@ -113,4 +119,21 @@ fn closest_intersection(ints: Vec<(isize, isize)>) -> (isize, isize) {
 #[test]
 fn test_closest_intersection() {
     assert_eq!(closest_intersection(vec![(0,0), (4,5), (3,2), (5,10)]), (3,2));
+}
+
+fn cheapest_intersection_cost(intersections: Path, p1: Path, p2: Path) -> usize {
+    intersections.into_iter().fold(0, |min, (int_x, int_y)| {
+        let steps_p1 = p1.iter().position(|&(x, y)| x == int_x && y == int_y).unwrap();
+        let steps_p2 = p2.iter().position(|&(x, y)| x == int_x && y == int_y).unwrap();
+        let cost = steps_p1 + steps_p2;
+        if cost < min || min == 0 { cost } else { min }
+    })
+}
+
+#[test]
+fn test_cheapest_intersection_cost() {
+    let p1 = parse_path("R75,D30,R83,U83,L12,D49,R71,U7,L72");
+    let p2 = parse_path("U62,R66,U55,R34,D71,R55,D58,R83");
+    let intersections = find_intersections(p1.clone(), p2.clone());
+    assert_eq!(cheapest_intersection_cost(intersections, p1, p2), 610)
 }
