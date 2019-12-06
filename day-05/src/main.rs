@@ -50,6 +50,42 @@ impl Iterator for State {
                 self.output.push(self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]));
                 self.pos += 2;
             },
+            Some('5') => {
+                let check = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
+                if check > 0 {
+                    self.pos = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]) as usize;
+                } else {
+                    self.pos += 3;
+                }
+            },
+            Some('6') => {
+                let check = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
+                if check == 0 {
+                    self.pos = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]) as usize;
+                } else {
+                    self.pos += 3;
+                }
+            },
+            Some('7') => {
+                let x = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
+                let y = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]);
+                let dest: usize = self.codes[self.pos+3] as usize;
+                match x < y {
+                    true => self.codes[dest] = 1,
+                    false => self.codes[dest] = 0,
+                }
+                self.pos += 4;
+            },
+            Some('8') => {
+                let x = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
+                let y = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]);
+                let dest: usize = self.codes[self.pos+3] as usize;
+                match x == y {
+                    true => self.codes[dest] = 1,
+                    false => self.codes[dest] = 0,
+                }
+                self.pos += 4;
+            },
             Some(_) => return None,
             None => return None,
         }
@@ -66,7 +102,8 @@ fn main() {
     let state = State{
         codes: intcodes,
         pos: 0,
-        input: 1,
+        // input: 1, // Part 1
+        input: 5, // Part 2
         output: vec![],
     };
 
