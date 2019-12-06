@@ -17,6 +17,14 @@ impl State {
             _ => unreachable!(),
         }
     }
+
+    fn n_params(&self, opcode: String, num: usize) -> Vec<isize> {
+        (1..=num).fold(vec![], |mut out, i| {
+            let param_type = opcode.chars().nth(4-i).unwrap();
+            out.push(self.param(param_type, self.codes[self.pos+i]));
+            out.clone()
+        })
+    }
 }
 
 impl Iterator for State {
@@ -28,61 +36,59 @@ impl Iterator for State {
         let opcode = format!("{:0>6}", self.codes[self.pos]);
         match opcode.chars().nth(5) {
             Some('1') => { // Add
-                let x = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
-                let y = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]);
-                let dest: usize = self.codes[self.pos+3] as usize;
-                self.codes[dest] = x + y;
+                let params = self.n_params(opcode, 2);
+                let dest = self.codes[self.pos+3] as usize;
+                self.codes[dest] = params[0] + params[1];
                 self.pos += 4;
             },
             Some('2') => { // Mult
-                let x = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
-                let y = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]);
-                let dest: usize = self.codes[self.pos+3] as usize;
-                self.codes[dest] = x * y;
+                let params = self.n_params(opcode, 2);
+                let dest = self.codes[self.pos+3] as usize;
+                self.codes[dest] = params[0] * params[1];
                 self.pos += 4;
             },
             Some('3') => { // Input
-                let dest: usize = self.codes[self.pos+1] as usize;
+                let dest = self.codes[self.pos+1] as usize;
                 self.codes[dest] = self.input;
                 self.pos += 2;
             },
             Some('4') => { // Output
-                self.output.push(self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]));
+                self.output.push(*self.n_params(opcode, 1).first().unwrap());
                 self.pos += 2;
             },
-            Some('5') => {
-                let check = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
-                if check > 0 {
-                    self.pos = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]) as usize;
+            Some('5') => { // Jump If True
+                let params = self.n_params(opcode, 2);
+                if params[0] > 0 {
+                    self.pos = params[1] as usize;
                 } else {
                     self.pos += 3;
                 }
             },
-            Some('6') => {
-                let check = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
-                if check == 0 {
-                    self.pos = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]) as usize;
+            Some('6') => { // Jump If False
+                let params = self.n_params(opcode, 2);
+                if params[0] == 0 {
+                    self.pos = params[1] as usize;
                 } else {
                     self.pos += 3;
                 }
             },
-            Some('7') => {
-                let x = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
-                let y = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]);
-                let dest: usize = self.codes[self.pos+3] as usize;
-                match x < y {
-                    true => self.codes[dest] = 1,
-                    false => self.codes[dest] = 0,
+            Some('7') => { // Less Than
+                let params = self.n_params(opcode, 2);
+                let dest = self.codes[self.pos+3] as usize;
+                if params[0] < params[1] {
+                    self.codes[dest] = 1;
+                } else {
+                    self.codes[dest] = 0;
                 }
                 self.pos += 4;
             },
-            Some('8') => {
-                let x = self.param(opcode.chars().nth(3).unwrap(), self.codes[self.pos+1]);
-                let y = self.param(opcode.chars().nth(2).unwrap(), self.codes[self.pos+2]);
-                let dest: usize = self.codes[self.pos+3] as usize;
-                match x == y {
-                    true => self.codes[dest] = 1,
-                    false => self.codes[dest] = 0,
+            Some('8') => { // Equals
+                let params = self.n_params(opcode, 2);
+                let dest = self.codes[self.pos+3] as usize;
+                if params[0] == params[1] {
+                    self.codes[dest] = 1;
+                } else {
+                    self.codes[dest] = 0;
                 }
                 self.pos += 4;
             },
@@ -97,7 +103,7 @@ fn main() {
     let raw_contents = fs::read_to_string("input.txt").expect("Error reading the file.");
     let contents = raw_contents.trim(); // get rid of trailing \n
 
-    let intcodes: IntCodes = contents.split(",").map(|x| x.parse().unwrap()).collect();
+    let intcodes: IntCodes = contents.split(',').map(|x| x.parse().unwrap()).collect();
 
     let state = State{
         codes: intcodes,
