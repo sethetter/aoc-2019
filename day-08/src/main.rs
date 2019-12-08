@@ -32,9 +32,15 @@ fn main() {
         }).collect()
     });
 
-    println!("Part 2: {:?}", final_img);
+    show(final_img, W);
+}
 
-    // Challenge was completed by taking the output from the println, pasting it
-    // into vim, stripping it down to the numbers, splitting it into rows, and
-    // replacing all the 0's with spaces. This showed ZFLBY.
- }
+fn show(img: Vec<u32>, w: usize) {
+    img.chunks(w).for_each(|l| {
+        let line: String = l.iter().map(|p| match p {
+            1 => '#',
+            _ => ' ',
+        }).collect();
+        println!("{}", line);
+    })
+}
