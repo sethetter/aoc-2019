@@ -87,24 +87,22 @@ impl Iterator for IntCodeComp {
             let opcode = format!("{:0>6}", self.codes[self.pos]);
             match opcode.chars().nth(5) {
                 Some('1') => { // Add
-                    let params = self.n_params(opcode, 2);
-                    let dest = self.codes[self.pos+3] as usize;
-                    self.set_val(dest, params[0] + params[1]);
+                    let params = self.n_params(opcode, 3);
+                    self.set_val(params[2] as usize, params[0] + params[1]);
                     self.advance_pos(4);
                 },
                 Some('2') => { // Mult
-                    let params = self.n_params(opcode, 2);
-                    let dest = self.codes[self.pos+3] as usize;
-                    self.set_val(dest, params[0] * params[1]);
+                    let params = self.n_params(opcode, 3);
+                    self.set_val(params[2] as usize, params[0] * params[1]);
                     self.advance_pos(4);
                 },
                 Some('3') => { // Input
-                    let dest = self.codes[self.pos + 1] as usize;
+                    let params = self.n_params(opcode, 1);
                     let v = match self.inputs.pop() {
                         Some(i) => i,
                         None => return None,
                     };
-                    self.set_val(dest, v);
+                    self.set_val(params[0] as usize, v);
                     self.advance_pos(2);
                 },
                 Some('4') => { // Output
@@ -113,40 +111,36 @@ impl Iterator for IntCodeComp {
                     return Some(x);
                 },
                 Some('5') => { // Jump If True
-                    let params = self.n_params(opcode, 1);
-                    let dest = self.codes[self.pos + 2] as usize;
+                    let params = self.n_params(opcode, 2);
                     if params[0] > 0 {
-                        self.set_pos(dest);
+                        self.set_pos(params[1] as usize);
                     } else {
                         self.advance_pos(3);
                     }
                 },
                 Some('6') => { // Jump If False
-                    let params = self.n_params(opcode, 1);
-                    let dest = self.codes[self.pos + 2] as usize;
+                    let params = self.n_params(opcode, 2);
                     if params[0] == 0 {
-                        self.set_pos(dest);
+                        self.set_pos(params[1] as usize);
                     } else {
                         self.advance_pos(3);
                     }
                 },
                 Some('7') => { // Less Than
-                    let params = self.n_params(opcode, 2);
-                    let dest = self.codes[self.pos + 3] as usize;
+                    let params = self.n_params(opcode, 3);
                     if params[0] < params[1] {
-                        self.set_val(dest, 1);
+                        self.set_val(params[2] as usize, 1);
                     } else {
-                        self.set_val(dest, 0);
+                        self.set_val(params[2] as usize, 0);
                     }
                     self.advance_pos(4);
                 },
                 Some('8') => { // Equals
                     let params = self.n_params(opcode, 3);
-                    let dest = self.codes[self.pos + 3] as usize;
                     if params[0] == params[1] {
-                        self.set_val(dest, 1);
+                        self.set_val(params[2] as usize, 1);
                     } else {
-                        self.set_val(dest, 0);
+                        self.set_val(params[2] as usize, 0);
                     }
                     self.advance_pos(4);
                 },
