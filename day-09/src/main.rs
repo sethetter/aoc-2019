@@ -168,7 +168,8 @@ fn main() {
 
     let intcodes: IntCodes = contents.split(',').map(|x| x.parse().unwrap()).collect();
 
-    let comp = IntCodeComp::new(intcodes.clone(), 0, vec![1]);
+    // let comp = IntCodeComp::new(intcodes.clone(), 0, vec![2]); // Part 1
+    let comp = IntCodeComp::new(intcodes.clone(), 0, vec![2]); // Part 2
 
     comp.for_each(|out| println!("{}", out));
 }
