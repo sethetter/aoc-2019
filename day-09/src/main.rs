@@ -16,15 +16,7 @@ impl IntCodeComp {
         IntCodeComp{ codes, inputs, rel_base, pos: 0, done: false }
     }
 
-    // fn input(&mut self, v: Option<isize>) {
-    //     match v {
-    //         None => { self.done = true; },
-    //         Some(x) => { self.inputs.splice(0..0, vec![x].iter().cloned()); },
-    //     }
-    // }
-
-    fn param(&mut self, t: char, v: isize) -> isize {
-        // println!("PLOOKUP: t: {}, v: {}", t, v);
+    fn val_param(&mut self, t: char, v: isize) -> isize {
         match t {
             '0' => { // Position mode
                 self.grow(v as usize);
@@ -42,14 +34,24 @@ impl IntCodeComp {
         }
     }
 
+    fn write_param(&self, opcode: String, idx: usize) -> isize {
+        let param_type = opcode.chars().nth(4-idx).unwrap();
+        let v = self.codes[self.pos+idx];
+
+        match param_type {
+            '0' | '1' => v,
+            '2' => self.rel_base + v,
+            _ => unreachable!(),
+        }
+    }
+
     fn n_params(&mut self, opcode: String, num: usize) -> Vec<isize> {
-        // println!("OPCODE: {}", opcode);
         let out = (1..=num).fold(vec![], |mut out, i| {
             let param_type = opcode.chars().nth(4-i).unwrap();
-            out.push(self.param(param_type, self.codes[self.pos+i]));
+            let param = self.val_param(param_type, self.codes[self.pos+i]);
+            out.push(param);
             out.clone()
         });
-        // println!("PARAMS: {:?}", out);
         out
     }
 
@@ -59,14 +61,14 @@ impl IntCodeComp {
         }
     }
 
-    fn set_val(&mut self, dest: usize, val: isize) {
-        self.grow(dest);
-        self.codes[dest] = val;
+    fn set_val(&mut self, dest: isize, val: isize) {
+        self.grow(dest as usize);
+        self.codes[dest as usize] = val;
     }
 
-    fn set_pos(&mut self, dest: usize) {
-        self.grow(dest);
-        self.pos = dest;
+    fn set_pos(&mut self, dest: isize) {
+        self.grow(dest as usize);
+        self.pos = dest as usize;
     }
 
     fn advance_pos(&mut self, offset: usize) {
@@ -87,22 +89,24 @@ impl Iterator for IntCodeComp {
             let opcode = format!("{:0>6}", self.codes[self.pos]);
             match opcode.chars().nth(5) {
                 Some('1') => { // Add
-                    let params = self.n_params(opcode, 3);
-                    self.set_val(params[2] as usize, params[0] + params[1]);
+                    let params = self.n_params(opcode.clone(), 2);
+                    let dest = self.write_param(opcode.clone(), 3);
+                    self.set_val(dest, params[0] + params[1]);
                     self.advance_pos(4);
                 },
                 Some('2') => { // Mult
-                    let params = self.n_params(opcode, 3);
-                    self.set_val(params[2] as usize, params[0] * params[1]);
+                    let params = self.n_params(opcode.clone(), 2);
+                    let dest = self.write_param(opcode.clone(), 3);
+                    self.set_val(dest, params[0] * params[1]);
                     self.advance_pos(4);
                 },
                 Some('3') => { // Input
-                    let params = self.n_params(opcode, 1);
+                    let dest = self.write_param(opcode.clone(), 3);
                     let v = match self.inputs.pop() {
                         Some(i) => i,
                         None => return None,
                     };
-                    self.set_val(params[0] as usize, v);
+                    self.set_val(dest, v);
                     self.advance_pos(2);
                 },
                 Some('4') => { // Output
@@ -113,7 +117,7 @@ impl Iterator for IntCodeComp {
                 Some('5') => { // Jump If True
                     let params = self.n_params(opcode, 2);
                     if params[0] > 0 {
-                        self.set_pos(params[1] as usize);
+                        self.set_pos(params[1]);
                     } else {
                         self.advance_pos(3);
                     }
@@ -121,26 +125,28 @@ impl Iterator for IntCodeComp {
                 Some('6') => { // Jump If False
                     let params = self.n_params(opcode, 2);
                     if params[0] == 0 {
-                        self.set_pos(params[1] as usize);
+                        self.set_pos(params[1]);
                     } else {
                         self.advance_pos(3);
                     }
                 },
                 Some('7') => { // Less Than
-                    let params = self.n_params(opcode, 3);
+                    let params = self.n_params(opcode.clone(), 2);
+                    let dest = self.write_param(opcode.clone(), 3);
                     if params[0] < params[1] {
-                        self.set_val(params[2] as usize, 1);
+                        self.set_val(dest, 1);
                     } else {
-                        self.set_val(params[2] as usize, 0);
+                        self.set_val(dest, 0);
                     }
                     self.advance_pos(4);
                 },
                 Some('8') => { // Equals
-                    let params = self.n_params(opcode, 3);
+                    let params = self.n_params(opcode.clone(), 2);
+                    let dest = self.write_param(opcode.clone(), 3);
                     if params[0] == params[1] {
-                        self.set_val(params[2] as usize, 1);
+                        self.set_val(dest, 1);
                     } else {
-                        self.set_val(params[2] as usize, 0);
+                        self.set_val(dest, 0);
                     }
                     self.advance_pos(4);
                 },
